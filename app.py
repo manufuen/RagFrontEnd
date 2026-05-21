@@ -96,7 +96,7 @@ def render_sources(sources):
     st.dataframe(clean_sources, use_container_width=True)
 
 
-st.title("📚 RAG Chat con Elasticsearch")
+st.title("📚 Chat de RAG con búsqueda híbrida")
 st.caption("Sube documentos, clasifícalos por temática y pregunta sobre ellos usando búsqueda híbrida BM25 + embeddings.")
 
 
