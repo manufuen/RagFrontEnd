@@ -191,6 +191,12 @@ for message in st.session_state.messages:
 
         if message["role"] == "assistant" and message.get("metadata"):
             with st.expander("Ver detalles de búsqueda"):
+                selected_document = result.get("selected_document")
+
+                if selected_document:
+                    st.write("**Documento seleccionado:**", selected_document.get("nombre_documento"))
+                    st.write("**Documento ID:**", selected_document.get("documento_id"))
+                    st.write("**Score documento:**", round(selected_document.get("score", 0), 4))
                 metadata = message["metadata"]
 
                 st.write("**Tema detectado:**", metadata.get("tema"))
@@ -221,6 +227,12 @@ if question:
                 st.markdown(answer)
 
                 with st.expander("Ver detalles de búsqueda"):
+                    selected_document = result.get("selected_document")
+
+                    if selected_document:
+                        st.write("**Documento seleccionado:**", selected_document.get("nombre_documento"))
+                        st.write("**Documento ID:**", selected_document.get("documento_id"))
+                        st.write("**Score documento:**", round(selected_document.get("score", 0), 4))
                     st.write("**Tema detectado:**", result.get("tema"))
                     st.write("**Índice consultado:**", result.get("index_name"))
                     st.write("**Encontrado:**", result.get("found"))
