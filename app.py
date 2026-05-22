@@ -95,6 +95,22 @@ def render_sources(sources):
 
     st.dataframe(clean_sources, use_container_width=True)
 
+def render_search_details(data):
+    selected_document = data.get("selected_document")
+
+    st.write("**Tema detectado:**", data.get("tema"))
+    st.write("**Índice consultado:**", data.get("index_name"))
+
+    if selected_document:
+        st.write("**Documento seleccionado:**", selected_document.get("nombre_documento"))
+        st.write("**Documento ID:**", selected_document.get("documento_id"))
+        st.write("**Score documento:**", round(selected_document.get("score", 0), 4))
+        st.write("**Chunks coincidentes:**", selected_document.get("matched_chunks"))
+
+    st.write("**Encontrado:**", data.get("found"))
+    st.write("**Motivo:**", data.get("reason"))
+
+    render_sources(data.get("sources", []))
 
 st.title("📚 Chat de RAG con búsqueda híbrida")
 st.caption("Sube documentos, clasifícalos por temática y pregunta sobre ellos usando búsqueda híbrida BM25 + embeddings.")
@@ -155,7 +171,6 @@ with st.sidebar:
 
                     if details.get("keywords"):
                         st.write("**Keywords:**", ", ".join(details.get("keywords", [])))
-
                 except Exception as e:
                     st.error(f"Error al ingestar documento: {e}")
 
@@ -191,20 +206,7 @@ for message in st.session_state.messages:
 
         if message["role"] == "assistant" and message.get("metadata"):
             with st.expander("Ver detalles de búsqueda"):
-                selected_document = result.get("selected_document")
-
-                if selected_document:
-                    st.write("**Documento seleccionado:**", selected_document.get("nombre_documento"))
-                    st.write("**Documento ID:**", selected_document.get("documento_id"))
-                    st.write("**Score documento:**", round(selected_document.get("score", 0), 4))
-                metadata = message["metadata"]
-
-                st.write("**Tema detectado:**", metadata.get("tema"))
-                st.write("**Índice consultado:**", metadata.get("index_name"))
-                st.write("**Encontrado:**", metadata.get("found"))
-                st.write("**Motivo:**", metadata.get("reason"))
-
-                render_sources(metadata.get("sources", []))
+                render_search_details(message["metadata"])
 
 
 question = st.chat_input("Pregunta algo sobre los documentos ingestados...")
@@ -227,18 +229,7 @@ if question:
                 st.markdown(answer)
 
                 with st.expander("Ver detalles de búsqueda"):
-                    selected_document = result.get("selected_document")
-
-                    if selected_document:
-                        st.write("**Documento seleccionado:**", selected_document.get("nombre_documento"))
-                        st.write("**Documento ID:**", selected_document.get("documento_id"))
-                        st.write("**Score documento:**", round(selected_document.get("score", 0), 4))
-                    st.write("**Tema detectado:**", result.get("tema"))
-                    st.write("**Índice consultado:**", result.get("index_name"))
-                    st.write("**Encontrado:**", result.get("found"))
-                    st.write("**Motivo:**", result.get("reason"))
-
-                    render_sources(result.get("sources", []))
+                    render_search_details(result)
 
                 st.session_state.messages.append({
                     "role": "assistant",
