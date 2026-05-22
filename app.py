@@ -126,6 +126,7 @@ with st.sidebar:
 
     col1, col2 = st.columns(2)
 
+
     with col1:
         if st.button("Probar backend"):
             try:
@@ -162,7 +163,24 @@ with st.sidebar:
                     result = upload_document(uploaded_file)
                     details = result.get("details", {})
 
-                    st.success("Documento ingestado correctamente")
+                    if result.get("status") == "duplicated":
+                        st.warning("documento ya ingestado")
+
+                        st.write("**Documento existente:**", details.get("nombre_documento"))
+                        st.write("**Tema:**", details.get("tema"))
+                        st.write("**Documento ID:**", details.get("documento_id"))
+                        st.write("**Fecha de ingesta:**", details.get("fecha_ingesta"))
+
+                    else:
+                        st.success("Documento ingestado correctamente")
+
+                        st.write("**Tema detectado:**", details.get("tema"))
+                        st.write("**Índice Elastic:**", details.get("indice_elastic"))
+                        st.write("**Chunks generados:**", details.get("chunks"))
+                        st.write("**Documento ID:**", details.get("documento_id"))
+
+                        if details.get("keywords"):
+                            st.write("**Keywords:**", ", ".join(details.get("keywords", [])))
 
                     st.write("**Tema detectado:**", details.get("tema"))
                     st.write("**Índice Elastic:**", details.get("indice_elastic"))
