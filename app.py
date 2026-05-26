@@ -1,8 +1,7 @@
-import os
-
-import requests
-import streamlit as st
-from dotenv import load_dotenv
+import os # librería para manejar variables de entorno y rutas
+import requests # libería para hacer peticiones HTTP al backend
+import streamlit as st # librería para crear la interfaz de usuario de la aplicación
+from dotenv import load_dotenv # librería para cargar variables de entorno desde un archivo .env
 
 
 # =============================================================================
@@ -51,10 +50,12 @@ if "confirm_delete_all_documents" not in st.session_state:
 # Cliente HTTP del backend
 # =============================================================================
 def get_backend_url() -> str:
+    # Asegura que la URL del backend no termine con una barra para evitar problemas al concatenar endpoints
     return st.session_state.backend_url.rstrip("/")
 
 
 def request_json(method: str, endpoint: str, **kwargs):
+    # Realiza una petición HTTP al backend y devuelve la respuesta JSON. 
     response = requests.request(
         method=method,
         url=f"{get_backend_url()}{endpoint}",
@@ -69,6 +70,9 @@ def request_json(method: str, endpoint: str, **kwargs):
     return response.json()
 
 
+''' 
+Endpoints que el frontend espera que el backend implemente. Cada función hace una petición HTTP al endpoint correspondiente y devuelve la respuesta JSON.
+'''
 def check_backend_health():
     return request_json("GET", "/", timeout=10)
 
@@ -131,7 +135,7 @@ def ask_question(question: str):
 # Helpers para temáticas
 # =============================================================================
 def extract_index_name(index_item):
-    """Devuelve exactamente el nombre real del índice: por ejemplo, rag_musica."""
+    # Devuelve exactamente el nombre real del índice: por ejemplo, rag_musica.
     if isinstance(index_item, str):
         return index_item
 
@@ -149,11 +153,13 @@ def extract_index_name(index_item):
 
 
 def load_indices_into_state():
+    # Carga las temáticas (índices) desde el backend y las guarda en el estado de sesión para mostrarlas en la pestaña de temáticas.
     indices_data = get_indices()
     st.session_state.last_indices = indices_data.get("indices", [])
 
 
 def extract_document_id(document_item):
+    # Devuelve el ID del documento asignado por el backend.
     if isinstance(document_item, str):
         return document_item
 
@@ -172,6 +178,7 @@ def extract_document_id(document_item):
 
 
 def extract_document_name(document_item):
+    # Devuelve el nombre del documento asignado por el backend.
     if isinstance(document_item, str):
         return document_item
 
@@ -189,6 +196,7 @@ def extract_document_name(document_item):
 
 
 def load_documents_into_state():
+    # Carga los documentos ingestados desde el backend y los guarda en el estado de sesión para mostrarlos en la pestaña de documentos.
     documents_data = get_documents()
     st.session_state.last_documents = (
         documents_data.get("documents")
@@ -202,6 +210,7 @@ def load_documents_into_state():
 # Componentes visuales reutilizables
 # =============================================================================
 def render_chunks(chunks):
+    # Renderiza la lista de chunks recuperados en la traza de búsqueda. 
     if not chunks:
         st.info("No se recuperaron chunks. El asistente no debería inventar una respuesta.")
         return
@@ -265,6 +274,7 @@ def render_chunks(chunks):
 
 
 def render_search_trace(data):
+    # Renderiza la traza de búsqueda RAG recibida del backend.
     selected_document = data.get("selected_document")
     chunks = data.get("sources", [])
 
@@ -290,6 +300,7 @@ def render_search_trace(data):
 
 
 def render_ingestion_result(result):
+    # Renderiza el resultado de la ingesta de un documento. 
     details = result.get("details", {})
 
     if result.get("status") == "duplicated":
@@ -316,6 +327,7 @@ def render_ingestion_result(result):
 
 
 def build_ingestion_summary(upload_results):
+    # Construye una tabla resumen con el resultado de la ingesta de múltiples documentos. Cada fila representa un documento y muestra su estado, temática detectada, índice asignado, número de chunks generados y detalles adicionales como el ID del documento o errores.
     rows = []
 
     for item in upload_results:
@@ -353,6 +365,7 @@ def build_ingestion_summary(upload_results):
 
 
 def render_bulk_ingestion_summary(upload_results):
+    # Renderiza un resumen visual de la ingesta masiva de documentos, mostrando métricas clave como el total de archivos procesados, cuántos fueron correctos, cuántos estaban duplicados y cuántos tuvieron errores. También muestra una tabla con el detalle de cada archivo.
     total = len(upload_results)
     errors = sum(1 for item in upload_results if item["status"] == "error")
     successful = total - errors
@@ -374,6 +387,7 @@ def render_bulk_ingestion_summary(upload_results):
 
 
 def render_sidebar():
+    # Renderiza la barra lateral con la configuración de la URL del backend, botones para probar la conexión al backend y a Elasticsearch, y opciones para limpiar el historial de chat.
     with st.sidebar:
         st.header("⚙️ Configuración")
 
@@ -417,6 +431,7 @@ def render_sidebar():
 
 
 def render_chat_tab():
+    # Renderiza la pestaña de chat, mostrando el historial de mensajes y la traza de búsqueda para cada respuesta del asistente. Permite al usuario ingresar una pregunta y muestra la respuesta generada por el backend junto con la evidencia recuperada.
     st.info(
         "Lanza una pregunta para buscar información dentro de tu biblioteca de documentos ingestados."
     )
@@ -485,6 +500,7 @@ def render_chat_tab():
 
 
 def render_ingestion_tab():
+    # Renderiza la pestaña de ingesta, permitiendo al usuario subir uno o varios documentos para incorporarlos a la biblioteca. Muestra el progreso de la ingesta, el resultado de cada archivo y un resumen al finalizar.
     st.subheader("📤 Ingestar documentos")
 
     st.write(
@@ -586,6 +602,7 @@ def render_ingestion_tab():
 
 
 def render_topics_table(indices):
+    # Renderiza la tabla de temáticas (índices) consultadas desde el backend, mostrando su nombre y un botón para eliminar cada una. Si no hay temáticas cargadas, muestra un mensaje informativo.
     if not indices:
         st.info("Todavía no hay temáticas cargadas o no se han consultado en esta sesión.")
         return
@@ -618,6 +635,7 @@ def render_topics_table(indices):
 
 
 def render_tematics_tab():
+    # Renderiza la pestaña de temáticas, permitiendo al usuario consultar las temáticas (índices) almacenadas en el backend, ver el número de documentos asociados a cada una y eliminar las temáticas que ya no necesite.
     st.subheader("🗂️ Temáticas")
 
     st.write(
@@ -671,6 +689,7 @@ def render_tematics_tab():
 
 
 def render_documents_table(documents):
+    # Renderiza la tabla de documentos ingestados consultados desde el backend, mostrando su nombre y un botón para eliminar cada uno. Si no hay documentos cargados, muestra un mensaje informativo.
     if not documents:
         st.info("Todavía no hay documentos cargados o no se han consultado en esta sesión.")
         return
@@ -704,6 +723,7 @@ def render_documents_table(documents):
 
 
 def render_documents_tab():
+    # Renderiza la pestaña de documentos ingestados, permitiendo al usuario consultar los documentos incorporados en la biblioteca y eliminar los que ya no necesite.
     st.subheader("📄 Documentos ingestados")
 
     st.write(
