@@ -602,18 +602,41 @@ def render_ingestion_tab():
 
 
 def render_topics_table(indices):
-    # Renderiza la tabla de temáticas (índices) consultadas desde el backend, mostrando su nombre y un botón para eliminar cada una. Si no hay temáticas cargadas, muestra un mensaje informativo.
+    # Renderiza la tabla de temáticas con buscador.
+    st.markdown("#### Temáticas almacenadas")
+
+    search_term = st.text_input(
+        "Buscar temática",
+        placeholder="Ej: biologia, quimica, medicina, astronomia...",
+        key="topics_search",
+    ).strip().lower()
+
     if not indices:
         st.info("Todavía no hay temáticas cargadas o no se han consultado en esta sesión.")
         return
 
-    st.markdown("#### Temáticas almacenadas")
+    filtered_indices = []
+
+    for index_item in indices:
+        index_name = extract_index_name(index_item)
+        clean_topic_name = index_name.replace("rag_", "", 1)
+
+        searchable_text = f"{index_name} {clean_topic_name}".lower()
+
+        if not search_term or search_term in searchable_text:
+            filtered_indices.append(index_item)
+
+    if not filtered_indices:
+        st.warning("No se encontraron temáticas que coincidan con la búsqueda.")
+        return
+
+    st.caption(f"Mostrando {len(filtered_indices)} de {len(indices)} temáticas.")
 
     header_col1, header_col2 = st.columns([6, 1.5])
     header_col1.markdown("**Temática**")
     header_col2.markdown("**Eliminar**")
 
-    for index_item in indices:
+    for index_item in filtered_indices:
         index_name = extract_index_name(index_item)
 
         col1, col2 = st.columns([6, 1.5])
@@ -689,26 +712,73 @@ def render_tematics_tab():
 
 
 def render_documents_table(documents):
-    # Renderiza la tabla de documentos ingestados consultados desde el backend, mostrando su nombre y un botón para eliminar cada uno. Si no hay documentos cargados, muestra un mensaje informativo.
+    # Renderiza la tabla de documentos ingestados con buscador.
+    st.markdown("#### Documentos incorporados")
+
+    search_term = st.text_input(
+        "Buscar documento",
+        placeholder="Ej: Biologia.pdf, quimica, astronomia, documento_id...",
+        key="documents_search",
+    ).strip().lower()
+
     if not documents:
         st.info("Todavía no hay documentos cargados o no se han consultado en esta sesión.")
         return
 
-    st.markdown("#### Documentos incorporados")
-
-    header_col1, header_col2 = st.columns([6, 1.5])
-    header_col1.markdown("**Documento**")
-    header_col2.markdown("**Eliminar**")
+    filtered_documents = []
 
     for document_item in documents:
         document_id = extract_document_id(document_item)
         document_name = extract_document_name(document_item)
 
-        col1, col2 = st.columns([6, 1.5])
+        if isinstance(document_item, dict):
+            topic = document_item.get("tema", "")
+            index_name = document_item.get("index_name", "")
+            fecha_ingesta = document_item.get("fecha_ingesta", "")
+        else:
+            topic = ""
+            index_name = ""
+            fecha_ingesta = ""
 
-        col1.markdown(f"`{document_name}`")
+        searchable_text = (
+            f"{document_id} {document_name} {topic} {index_name} {fecha_ingesta}"
+        ).lower()
 
-        if col2.button("Eliminar", key=f"delete_document_{document_id}", use_container_width=True):
+        if not search_term or search_term in searchable_text:
+            filtered_documents.append(document_item)
+
+    if not filtered_documents:
+        st.warning("No se encontraron documentos que coincidan con la búsqueda.")
+        return
+
+    st.caption(f"Mostrando {len(filtered_documents)} de {len(documents)} documentos.")
+
+    header_col1, header_col2, header_col3, header_col4 = st.columns([4, 2, 2, 1.5])
+    header_col1.markdown("**Documento**")
+    header_col2.markdown("**Temática**")
+    header_col3.markdown("**Chunks**")
+    header_col4.markdown("**Eliminar**")
+
+    for document_item in filtered_documents:
+        document_id = extract_document_id(document_item)
+        document_name = extract_document_name(document_item)
+
+        if isinstance(document_item, dict):
+            topic = document_item.get("tema", "-")
+            chunks = document_item.get("chunks", "-")
+        else:
+            topic = "-"
+            chunks = "-"
+
+        col1, col2, col3, col4 = st.columns([4, 2, 2, 1.5])
+
+        document_url = f"{get_backend_url()}/documents/{document_id}/file"
+
+        col1.markdown(f"[{document_name}]({document_url})")
+        col2.markdown(f"`{topic}`")
+        col3.markdown(f"`{chunks}`")
+
+        if col4.button("Eliminar", key=f"delete_document_{document_id}", use_container_width=True):
             try:
                 delete_document(document_id)
                 st.success(f"Documento `{document_name}` eliminado correctamente.")
